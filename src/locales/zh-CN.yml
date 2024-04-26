@@ -1,0 +1,7 @@
+dataDir:
+  $description: 签文json文件的路径
+
+commands:
+  touhou-fortune:
+    messages:
+        too-frequent: 您今天已经求过签了哦，还请明日再来吧
