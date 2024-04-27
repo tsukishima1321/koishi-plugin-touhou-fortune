@@ -79,7 +79,7 @@ export function apply(ctx: Context) {
     .action(async ({ session }) => {
       await getfileByUrl(source, join(__dirname, 'Touhou_Fourtune_Slips.json'))
       try {
-        var data = fs.readFileSync(join(__dirname, 'Touhou_Fourtune_Slips.json', 'utf8'));
+        var data = fs.readFileSync(join(__dirname, 'Touhou_Fourtune_Slips.json') ,'utf8');
         var config = JSON.parse(data);
       } catch (err) {
         console.log(`Error reading file from disk: ${err}`);
