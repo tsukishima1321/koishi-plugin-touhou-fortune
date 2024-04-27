@@ -1,7 +1,6 @@
 import { Context, Schema, h, Time } from 'koishi'
 import { } from '@koishijs/cache'
 import { join } from 'path';
-import { config } from 'process';
 var request = require("request");
 var fs = require("fs");
 
