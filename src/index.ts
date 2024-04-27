@@ -1,20 +1,10 @@
-import { Context, Schema, h, Time } from 'koishi'
+import { Context, h, Time } from 'koishi'
 import { } from '@koishijs/cache'
 import { join } from 'path';
 var request = require("request");
 var fs = require("fs");
 
 export const name = 'touhou-fortune'
-
-export interface Config {
-  dataDir: string
-}
-
-export const Config: Schema<Config> = Schema.object({
-  dataDir: Schema.string().default("./Touhou_Fourtune_Slips.json"),
-}).i18n({
-  'zh-CN': require('./locales/zh-CN'),
-})
 
 export const inject = {
   required: ['cache'],
@@ -35,7 +25,7 @@ declare module '@koishijs/cache' {
 
 async function getfileByUrl(url: string, dir: string): Promise<boolean> {
   return new Promise((resolve, reject) => {
-    let stream = fs.createWriteStream(join(__dirname, dir));
+    let stream = fs.createWriteStream(dir);
     request(url).pipe(stream).on("close", (err) => {
       if (err) {
         console.error(err);
@@ -58,10 +48,10 @@ function isSameDay(timestamp1: number, timestamp2: number): boolean {
   )
 }
 
-export function apply(ctx: Context, cfg: Config) {
+export function apply(ctx: Context) {
   ctx.i18n.define('zh-CN', require('./locales/zh-CN'))
   try {
-    var data = fs.readFileSync(join(__dirname, cfg.dataDir), 'utf8');
+    var data = fs.readFileSync(join(__dirname, 'Touhou_Fourtune_Slips.json'), 'utf8');
     var config = JSON.parse(data);
   } catch (err) {
     console.log(`Error reading file from disk: ${err}`);
@@ -87,9 +77,9 @@ export function apply(ctx: Context, cfg: Config) {
     })
   ctx.command('update-slips')
     .action(async ({ session }) => {
-      await getfileByUrl(source, cfg.dataDir)
+      await getfileByUrl(source, join(__dirname, 'Touhou_Fourtune_Slips.json'))
       try {
-        var data = fs.readFileSync(join(__dirname, cfg.dataDir), 'utf8');
+        var data = fs.readFileSync(join(__dirname, 'Touhou_Fourtune_Slips.json', 'utf8'));
         var config = JSON.parse(data);
       } catch (err) {
         console.log(`Error reading file from disk: ${err}`);
