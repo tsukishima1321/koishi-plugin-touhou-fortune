@@ -54,7 +54,7 @@ export function apply(ctx: Context, cfg: Config) {
       }
       ctx.cache.set('slip_record', String(session.userId), Date.now(), 2 * Time.day)
       const idx = Math.floor(Math.random() * slips.length)
-      var res: string = h.at(session.userId) + " \n "
+      var res: string = h.at(session.userId) + ".\n "
       for (var i = 0; i < slips[idx].content.length; i++) {
         res += slips[idx].content[i] + "\n"
       }

@@ -1,5 +1,5 @@
 dataDir:
-  $description: 签文json文件的路径
+  $description: 签文json文件的路径（如果不使用默认值，建议填写绝对路径）
 
 commands:
   touhou-fortune:
