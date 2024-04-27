@@ -1,6 +1,7 @@
 import { Context, Schema, h, Time } from 'koishi'
 import { } from '@koishijs/cache'
 import { join } from 'path';
+import { config } from 'process';
 var request = require("request");
 var fs = require("fs");
 
@@ -60,8 +61,14 @@ function isSameDay(timestamp1: number, timestamp2: number): boolean {
 
 export function apply(ctx: Context, cfg: Config) {
   ctx.i18n.define('zh-CN', require('./locales/zh-CN'))
-  var slips: Slip[] = require(cfg.dataDir).slips
-  var source: string = require(cfg.dataDir).source
+  try {
+    var data = fs.readFileSync(join(__dirname, cfg.dataDir), 'utf8');
+    var config = JSON.parse(data);
+  } catch (err) {
+    console.log(`Error reading file from disk: ${err}`);
+  }
+  var slips: Slip[] = config.slips
+  var source: string = config.source
   ctx.command('touhou-fortune').alias('求签')
     .action(async ({ session }) => {
       const record = await ctx.cache.get('slip_record', String(session.userId))
@@ -82,7 +89,13 @@ export function apply(ctx: Context, cfg: Config) {
   ctx.command('update-slips')
     .action(async ({ session }) => {
       await getfileByUrl(source, cfg.dataDir)
-      slips = require(cfg.dataDir).slips
+      try {
+        var data = fs.readFileSync(join(__dirname, cfg.dataDir), 'utf8');
+        var config = JSON.parse(data);
+      } catch (err) {
+        console.log(`Error reading file from disk: ${err}`);
+      }
+      slips = config.slips
       try {
         if (slips.length == 0) {
           return session.text('.update-fail')
