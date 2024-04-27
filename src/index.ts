@@ -1,5 +1,8 @@
 import { Context, Schema, h, Time } from 'koishi'
 import { } from '@koishijs/cache'
+import { join } from 'path';
+var request = require("request");
+var fs = require("fs");
 
 export const name = 'touhou-fortune'
 
@@ -30,6 +33,21 @@ declare module '@koishijs/cache' {
   }
 }
 
+async function getfileByUrl(url: string, dir: string): Promise<boolean> {
+  return new Promise((resolve, reject) => {
+    let stream = fs.createWriteStream(join(__dirname, dir));
+    request(url).pipe(stream).on("close", (err) => {
+      if (err) {
+        console.error(err);
+        reject(err)
+      } else {
+        console.log("更新完成");
+        resolve(true)
+      }
+    });
+  })
+}
+
 function isSameDay(timestamp1: number, timestamp2: number): boolean {
   const date1 = new Date(timestamp1)
   const date2 = new Date(timestamp2)
@@ -42,7 +60,8 @@ function isSameDay(timestamp1: number, timestamp2: number): boolean {
 
 export function apply(ctx: Context, cfg: Config) {
   ctx.i18n.define('zh-CN', require('./locales/zh-CN'))
-  const slips: Slip[] = require(cfg.dataDir).slips
+  var slips: Slip[] = require(cfg.dataDir).slips
+  var source: string = require(cfg.dataDir).source
   ctx.command('touhou-fortune').alias('求签')
     .action(async ({ session }) => {
       const record = await ctx.cache.get('slip_record', String(session.userId))
@@ -59,5 +78,18 @@ export function apply(ctx: Context, cfg: Config) {
         res += slips[idx].content[i] + "\n"
       }
       return res
+    })
+  ctx.command('update-slips')
+    .action(async ({ session }) => {
+      await getfileByUrl(source, cfg.dataDir)
+      slips = require(cfg.dataDir).slips
+      try {
+        if (slips.length == 0) {
+          return session.text('.update-fail')
+        }
+      } catch (e) {
+        return session.text('.update-fail')
+      }
+      return session.text('.update-success')
     })
 }

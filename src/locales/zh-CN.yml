@@ -5,3 +5,7 @@ commands:
   touhou-fortune:
     messages:
         too-frequent: 您今天已经求过签了哦，还请明日再来吧
+  update-slips:
+    messages:
+        update-success: 签文数据更新成功
+        update-fail: 更新失败，请检查文件
