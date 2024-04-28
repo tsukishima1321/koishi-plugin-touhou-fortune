@@ -1,5 +1,5 @@
-dataDir:
-  $description: 签文json文件的路径（如果不使用默认值，建议填写绝对路径）
+sharedAmongGroups:
+  $description: 求签记录是否在不同群聊间共享
 
 commands:
   touhou-fortune:
