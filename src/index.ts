@@ -89,7 +89,7 @@ export function apply(ctx: Context, cfg: Config) {
       }
       //如果cache里能存map就只需要下面这一行就能搞定了
       let exist = false
-      for (i = 0; i < record.length; i++) {
+      for (let i = 0; i < record.length; i++) {
         if (record[i].group == String(session.guildId)) {
           record[i].time = Date.now()
           exist = true
