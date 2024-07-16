@@ -1,6 +1,5 @@
 import { Context, h, Time, Schema } from 'koishi'
 import { } from '@koishijs/cache'
-import { join } from 'path';
 var request = require("request");
 var fs = require("fs");
 
@@ -11,12 +10,6 @@ export const inject = {
   optional: [],
 }
 
-interface Slip {
-  content: string[],
-  id: number,
-  sign: string,
-}
-
 declare module '@koishijs/cache' {
   interface Tables {
     slip_record: Array<{ group: string, time: number }>
@@ -25,10 +18,14 @@ declare module '@koishijs/cache' {
 
 export interface Config {
   sharedAmongGroups: boolean
+  defaultSlips: string
+  groupConfig: object
 }
 
 export const Config: Schema<Config> = Schema.object({
-  sharedAmongGroups: Schema.boolean().default(false)
+  sharedAmongGroups: Schema.boolean().default(false),
+  defaultSlips: Schema.path().default("./data/fortune/Touhou_Fortune_Slips.json"),
+  groupConfig: Schema.dict(Schema.path()).role('table').default({ "123456": "./data/fortune/Touhou_Fortune_Slips.json" }),
 }).i18n({
   'zh-CN': require('./locales/zh-CN'),
 })
@@ -58,22 +55,53 @@ function isSameDay(timestamp1: number, timestamp2: number): boolean {
   )
 }
 
+interface Slip {
+  content: string[],
+  id: number,
+  sign: string,
+}
+
 export function apply(ctx: Context, cfg: Config) {
-  const defaultsource = "https://raw.githubusercontent.com/Dawnzed/Touhou-Fortune-slip/main/Touhou_Fourtune_Slips.json"
   ctx.i18n.define('zh-CN', require('./locales/zh-CN'))
   try {
-    var data = fs.readFileSync(join(__dirname, 'Touhou_Fourtune_Slips.json'), 'utf8');
-    var config = JSON.parse(data);
+    if (!fs.existsSync("./data/fortune")) {
+      fs.mkdirSync("./data/fortune")
+    }
+  } catch (err) {
+    console.error(err)
+    console.error("请检查文件权限")
+  }
+  let slipFiles: Map<string, Array<Slip>> = new Map()
+  try {
+    let data = fs.readFileSync(cfg.defaultSlips, 'utf8');
+    let parsed = JSON.parse(data);
+    let slips: Slip[]
+    try {
+      slips = parsed.slips
+    } catch (e) {
+      slips = [{ id: 0, sign: "", content: ["签文文件读取错误"] }]
+    }
+    slipFiles.set("default", slips.concat())
   } catch (err) {
     console.log(`Error reading file from disk: ${err}`);
   }
-  try {
-    var slips: Slip[] = config.slips
-    var source: string = config.source
-  } catch (e) {
-    var slips: Slip[] = [{ id: 0, sign: "", content: ["签文文件读取错误"] }]
-    var source: string = defaultsource
+  for (let key of Object.keys(cfg.groupConfig)) {
+    //console.log(`${key}: ${cfg.groupConfig[key]}`);
+    try {
+      let data = fs.readFileSync(cfg.groupConfig[key], 'utf8');
+      let parsed = JSON.parse(data);
+      let slips: Slip[]
+      try {
+        slips = parsed.slips
+      } catch (e) {
+        slips = [{ id: 0, sign: "", content: ["签文文件读取错误"] }]
+      }
+      slipFiles.set(key, slips.concat())
+    } catch (err) {
+      console.log(`Error reading file from disk: ${err}`);
+    }
   }
+  console.log(slipFiles)
 
   ctx.command('touhou-fortune').alias('求签')
     .action(async ({ session }) => {
@@ -95,42 +123,22 @@ export function apply(ctx: Context, cfg: Config) {
           exist = true
         }
       }
-      if (!exist){
+      if (!exist) {
         record.push({ group: String(session.guildId), time: Date.now() })
       }
       //record.set(String(session.guildId), Date.now())
       ctx.cache.set('slip_record', String(session.userId), record, 2 * Time.day)
       //console.log(record)
+      let slips = slipFiles.get(session.guildId)
+      if(!slips){
+        slips = slipFiles.get("default")
+      }
+      console.log(slips)
       const idx = Math.floor(Math.random() * slips.length)
       var res: string = h.at(session.userId) + ".\n "
       for (var i = 0; i < slips[idx].content.length; i++) {
         res += slips[idx].content[i] + "\n"
       }
       return res
-    })
-  ctx.command('update-slips')
-    .action(async ({ session }) => {
-      try {
-        await getfileByUrl(source, join(__dirname, 'Touhou_Fourtune_Slips.json'))
-      } catch (err) {
-        return session.text('.update-fail')
-      }
-      try {
-        var data = fs.readFileSync(join(__dirname, 'Touhou_Fourtune_Slips.json'), 'utf8');
-        var config = JSON.parse(data);
-        source = config.source
-        slips = config.slips
-      } catch (err) {
-        source = defaultsource
-        return session.text('.update-fail')
-      }
-      try {
-        if (slips.length == 0) {
-          return session.text('.update-fail')
-        }
-      } catch (e) {
-        return session.text('.update-fail')
-      }
-      return session.text('.update-success')
     })
 }

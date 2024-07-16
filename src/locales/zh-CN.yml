@@ -1,6 +1,12 @@
 sharedAmongGroups:
   $description: 求签记录是否在不同群聊间共享
 
+defaultSlips:
+  $description: 默认的签文文件路径
+
+groupConfig:
+  $description: 按群组定制的签文路径，键为群号
+
 commands:
   touhou-fortune:
     messages:
